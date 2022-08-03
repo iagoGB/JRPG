@@ -8,11 +8,12 @@ public class AIController : MonoBehaviour
     // Start is called before the first frame update
     float maxATB = 100f;
     float currentATB;
-    float atbSpeed = 2f;
+    public float atbSpeed = 0.02f;
     float rotationSpeed = 800f;
-    float attackRange = 3f;
+    float attackRange = 2f;
     UnityEngine.AI.NavMeshAgent navMesh;
     GameObject target;
+    Quaternion toRotation;
 
     void Start()
     {
@@ -37,15 +38,20 @@ public class AIController : MonoBehaviour
 
         while(!hasRange()) 
         {
-            navMesh.destination = target.transform.position;
-            Quaternion toRotation = Quaternion.LookRotation(target.transform.position, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, rotationSpeed * Time.deltaTime);
+            navMesh.isStopped = false;
+            navMesh.SetDestination(new Vector3(target.transform.position.x + 1f,0, target.transform.position.z + 0.5f));
+            transform.LookAt(new Vector3(target.transform.position.x + 1f,0, target.transform.position.z));
             yield return null;
         }
 
+        navMesh.isStopped = true;
+        toRotation = Quaternion.LookRotation(target.transform.position, Vector3.up);
+        transform.LookAt(new Vector3(target.transform.position.x + 0.5f,0, target.transform.position.z));
         //TODO Fazer ação de ataque
         transform.position = new Vector3(transform.position.x, 0.2f, transform.position.z);
-        yield return new WaitForSeconds(2);
+        
+        yield return new WaitForSeconds(1);
+        navMesh.SetDestination(new Vector3(transform.position.x - 1.5f,0, transform.position.z));
         currentATB = 0f;
     }
 

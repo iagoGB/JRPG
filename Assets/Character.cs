@@ -1,4 +1,7 @@
 
+using System;
+using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -12,19 +15,72 @@ public class Character : MonoBehaviour
     Vector3 moveDirection;
     public float jumpSpeed;
     private float ySpeed;
+    float currentATB = 0f;
+    public float attackRange = 2.5f;
+
+    UnityEngine.AI.NavMeshAgent navMesh;
+
+    GameObject enemy;
+
+    Quaternion toRotation;
+
 
 
     // Start is called before the first frame update
     void Start()
     {  
         characterController = GetComponent<CharacterController>();
+        enemy = GameObject.FindWithTag("Enemy");
+        navMesh = GetComponent<UnityEngine.AI.NavMeshAgent>();
         animator = GetComponent<Animator>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        Move();
+        StartCoroutine(PlayerRoutine());
+    }
+
+    IEnumerator PlayerRoutine()
+    {
+
+        while (!CanAct())
+        {
+            currentATB += 0.05f * Time.deltaTime;
+            // Move();  
+            yield return null;
+        }
+
+        while(!hasRange())
+        {   
+            navMesh.isStopped = false;
+            animator.SetBool("isRunning", true);
+            // characterController.Move(enemy.transform.position * speed * Time.deltaTime);
+            navMesh.SetDestination(new Vector3(enemy.transform.position.x,-0.5f, enemy.transform.position.z));
+            transform.LookAt(new Vector3(enemy.transform.position.x,0, enemy.transform.position.z));
+            yield return null;
+        }
+
+        navMesh.isStopped = true;
+        toRotation = Quaternion.LookRotation(enemy.transform.position, Vector3.up);
+        transform.LookAt(new Vector3(enemy.transform.position.x + 0.3f,0.1f, enemy.transform.position.z));
+        Debug.Log("Attack da GATA!");
+        animator.SetBool("isAttacking", true);
+        yield return new WaitForSeconds(0.5f);
+        animator.SetBool("isAttacking", false);
+        animator.SetBool("isRunning", false);
+        currentATB = 0f;
+    }
+
+    Boolean CanAct()
+    {
+        return currentATB >= 100;
+    }
+
+    Boolean hasRange(){
+        var distanceUntilPlayer = Vector3.Distance(transform.position, enemy.transform.position);
+        Debug.Log("distance"+ distanceUntilPlayer);
+        return attackRange >= distanceUntilPlayer;
     }
 
     private void Move()
@@ -69,5 +125,10 @@ public class Character : MonoBehaviour
     void Jump()
     {
         ySpeed = jumpSpeed;
+    }
+
+    void OnCollisionEnter()
+    {
+        Debug.Log("Take damage!!!!");
     }
 }
