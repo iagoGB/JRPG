@@ -12,13 +12,15 @@ public class AIController : MonoBehaviour
     float rotationSpeed = 800f;
     float attackRange = 2f;
     UnityEngine.AI.NavMeshAgent navMesh;
-    GameObject target;
+    Character target;
     Quaternion toRotation;
+
+    Boolean canDecrease = true;
 
     void Start()
     {
         currentATB = 0f;
-        target = GameObject.FindWithTag("Player");
+        target = GameObject.FindObjectOfType<Character>();
         navMesh = GetComponent<UnityEngine.AI.NavMeshAgent>();
     }
 
@@ -29,7 +31,8 @@ public class AIController : MonoBehaviour
     }
 
     IEnumerator EnemyRoutine()
-    {
+    {   
+        canDecrease = true;
         while(!CanAct())
         {
             currentATB += atbSpeed * Time.deltaTime;
@@ -37,7 +40,7 @@ public class AIController : MonoBehaviour
         }
 
         while(!hasRange()) 
-        {
+        {   
             navMesh.isStopped = false;
             navMesh.SetDestination(new Vector3(target.transform.position.x + 1f,0, target.transform.position.z + 0.5f));
             transform.LookAt(new Vector3(target.transform.position.x + 1f,0, target.transform.position.z));
@@ -49,10 +52,12 @@ public class AIController : MonoBehaviour
         transform.LookAt(new Vector3(target.transform.position.x + 0.5f,0, target.transform.position.z));
         //TODO Fazer ação de ataque
         transform.position = new Vector3(transform.position.x, 0.2f, transform.position.z);
-        
+        if (canDecrease) target.hp -=20;
+        canDecrease = false;
+        currentATB = 0f;
         yield return new WaitForSeconds(1);
         navMesh.SetDestination(new Vector3(transform.position.x - 1.5f,0, transform.position.z));
-        currentATB = 0f;
+        
     }
 
     Boolean CanAct() {

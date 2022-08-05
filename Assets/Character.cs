@@ -3,11 +3,13 @@ using System;
 using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
-
+using UnityEngine.Networking.Types;
 
 public class Character : MonoBehaviour
 {
     public float speed = 5f;
+
+    public int hp = 200;
     public float rotationSpeed = 1200;
     public Vector3 velocity = new Vector3();
     CharacterController characterController;
@@ -16,7 +18,7 @@ public class Character : MonoBehaviour
     public float jumpSpeed;
     private float ySpeed;
     float currentATB = 0f;
-    public float attackRange = 2.5f;
+    public float attackRange = 1.8f;
 
     UnityEngine.AI.NavMeshAgent navMesh;
 
@@ -44,32 +46,40 @@ public class Character : MonoBehaviour
     IEnumerator PlayerRoutine()
     {
 
-        while (!CanAct())
-        {
-            currentATB += 0.05f * Time.deltaTime;
-            // Move();  
+        while(hp >= 0) {
+
+            while (!CanAct())
+            {
+                currentATB += 0.05f * Time.deltaTime;
+                // Move();  
+                yield return null;
+            }
+
+            while(!hasRange())
+            {   
+                navMesh.isStopped = false;
+                animator.SetBool("isRunning", true);
+                // characterController.Move(enemy.transform.position * speed * Time.deltaTime);
+                navMesh.SetDestination(new Vector3(enemy.transform.position.x,-0.5f, enemy.transform.position.z));
+                transform.LookAt(new Vector3(enemy.transform.position.x,0, enemy.transform.position.z));
+                yield return null;
+            }
+
+            navMesh.isStopped = true;
+            toRotation = Quaternion.LookRotation(enemy.transform.position, Vector3.up);
+            transform.LookAt(new Vector3(enemy.transform.position.x + 0.3f,0.1f, enemy.transform.position.z));
+            Debug.Log("Attack da GATA!");
+            animator.SetBool("isAttacking", true);
+            yield return new WaitForSeconds(0.5f);
+            animator.SetBool("isAttacking", false);
+            animator.SetBool("isRunning", false);
+            currentATB = 0f;
+
             yield return null;
         }
 
-        while(!hasRange())
-        {   
-            navMesh.isStopped = false;
-            animator.SetBool("isRunning", true);
-            // characterController.Move(enemy.transform.position * speed * Time.deltaTime);
-            navMesh.SetDestination(new Vector3(enemy.transform.position.x,-0.5f, enemy.transform.position.z));
-            transform.LookAt(new Vector3(enemy.transform.position.x,0, enemy.transform.position.z));
-            yield return null;
-        }
+        animator.SetInteger("hp",-1);
 
-        navMesh.isStopped = true;
-        toRotation = Quaternion.LookRotation(enemy.transform.position, Vector3.up);
-        transform.LookAt(new Vector3(enemy.transform.position.x + 0.3f,0.1f, enemy.transform.position.z));
-        Debug.Log("Attack da GATA!");
-        animator.SetBool("isAttacking", true);
-        yield return new WaitForSeconds(0.5f);
-        animator.SetBool("isAttacking", false);
-        animator.SetBool("isRunning", false);
-        currentATB = 0f;
     }
 
     Boolean CanAct()
